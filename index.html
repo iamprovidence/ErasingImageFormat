@@ -31,6 +31,11 @@
             font-size: 16px;
             cursor: pointer;
         }
+
+        .slider-container {
+            display: flex;
+            align-items: center;
+        }
     </style>
 </head>
 
@@ -49,6 +54,13 @@
         <select id="layerSelect">
             <!-- Шари зображень будуть додаватися динамічно -->
         </select>
+
+        <!-- Слайдер для регулювання розміру стирачки -->
+        <div class="slider-container">
+            <label for="eraserSize">Розмір стирачки: </label>
+            <input type="range" id="eraserSize" min="5" max="50" value="40">
+            <span id="eraserSizeValue">40</span> px
+        </div>
     </div>
 
     <script>
@@ -59,11 +71,14 @@
         const clearButton = document.getElementById('clearCanvas');
         const eraserButton = document.getElementById('eraserButton');
         const layerSelect = document.getElementById('layerSelect');
+        const eraserSizeInput = document.getElementById('eraserSize');
+        const eraserSizeValue = document.getElementById('eraserSizeValue');
 
         let isErasing = false;  // Вказує, чи активована стирачка
         let isDrawing = false;  // Вказує, чи активне малювання (стирка)
         let images = []; // Масив для збереження шарів зображень
         let currentLayerIndex = 0;  // Індекс поточного шару
+        let eraserSize = parseInt(eraserSizeInput.value, 10); // Розмір стирачки
 
         // Обробка завантаження зображень
         fileInput.addEventListener('change', function (event) {
@@ -94,6 +109,17 @@
             })
 
             uploadFilesPromise.then(() => {
+
+                images
+                    .filter(({ img }) => {
+                        return img.onload === null;
+                    })
+                    .forEach(({ img }) => {
+                        img.onload = () => {
+                            drawLayers();
+                        }
+                    });
+
                 currentLayerIndex = images.length - 1;
                 updateLayerOptions(); // Оновлюємо список шарів
                 drawLayers(); // Малюємо всі шари
@@ -146,6 +172,13 @@
             eraserButton.textContent = isErasing ? 'Стирачка активна' : 'Стирачка';
         });
 
+
+        // Обробка зміни розміру стирачки через слайдер
+        eraserSizeInput.addEventListener('input', function (event) {
+            eraserSize = parseInt(event.target.value, 10);
+            eraserSizeValue.textContent = eraserSize; // Оновлюємо відображення поточного розміру
+        });
+
         // Обробка події натискання миші на Canvas
         canvas.addEventListener('mousedown', function (event) {
             if (isErasing) {
@@ -191,7 +224,7 @@
 
             // Встановлюємо параметри стирачки
             tempCtx.globalCompositeOperation = 'destination-out'; // Змішуємо кольори для стирки
-            tempCtx.lineWidth = 20;  // Розмір стирачки
+            tempCtx.lineWidth = eraserSize;  // Розмір стирачки
             tempCtx.lineCap = 'round'; // Кінці ліній стирачки - округлі
             tempCtx.strokeStyle = 'rgba(0,0,0,1)'; // Колір стирачки
 
@@ -204,16 +237,7 @@
             tempCtx.globalCompositeOperation = 'source-over';
 
             // Оновлюємо зображення поточного шару
-
-            console.warn("erase", images[currentLayerIndex].img.onload)
-
-            if (!images[currentLayerIndex].img.onload) {
-                images[currentLayerIndex].img.onload = () => {
-                    // Оновлюємо всі шари на основному canvas
-                    drawLayers();
-                    images[currentLayerIndex].img.onload = null;
-                }
-            }
+            // зображення автоматично перемалююься
             images[currentLayerIndex].img.src = tempCanvas.toDataURL();
         }
     </script>
