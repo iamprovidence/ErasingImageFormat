@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Завантаження зображення</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+        }
+
+        canvas {
+            border: 1px solid #ccc;
+            margin-top: 20px;
+        }
+
+        .controls {
+            margin-top: 20px;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Завантажити та відобразити зображення</h1>
+    <input type="file" id="fileInput" accept="image/*">
+    <div class="controls">
+        <button id="clearCanvas">Очистити Canvas</button>
+    </div>
+    <canvas id="canvas" width="500" height="500"></canvas>
+
+    <script>
+        // Отримуємо елементи для роботи
+        const fileInput = document.getElementById('fileInput');
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d'); // Отримуємо контекст canvas
+        const clearButton = document.getElementById('clearCanvas');
+
+        // Додаємо обробник події для завантаження зображення
+        fileInput.addEventListener('change', function (event) {
+            const file = event.target.files[0];
+            if (file) {
+                // Створюємо об'єкт для зображення
+                const img = new Image();
+                // Створюємо URL для завантаженого файлу
+                const imageUrl = URL.createObjectURL(file);
+                img.src = imageUrl;
+
+                // Відображаємо зображення на Canvas після його завантаження
+                img.onload = function () {
+                    // Очищаємо попереднє зображення (якщо є)
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+                    // Масштабуємо зображення, щоб воно відповідало розміру canvas
+                    let scale = Math.min(canvas.width / img.width, canvas.height / img.height);
+                    let x = (canvas.width / 2) - (img.width / 2) * scale;
+                    let y = (canvas.height / 2) - (img.height / 2) * scale;
+
+                    // Малюємо зображення на canvas
+                    ctx.drawImage(img, x, y, img.width * scale, img.height * scale);
+
+                    // Звільняємо URL-об'єкт для запобігання утечці пам'яті
+                    URL.revokeObjectURL(imageUrl);
+                }
+            }
+        });
+
+        // Обробка натискання кнопки "Очистити Canvas"
+        clearButton.addEventListener('click', function () {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+        });
+
+
+
+        // Стирачка
+        let isErasing = false;  // Вказує, чи активована стирачка
+        canvas.addEventListener('mousedown', function (event) {
+            isErasing = true;
+        });
+
+        // Обробка відпускання кнопки миші
+        canvas.addEventListener('mouseup', function () {
+            isErasing = false; // Завершення малювання (стирки)
+        });
+
+        // Обробка руху миші на Canvas
+        canvas.addEventListener('mousemove', function (event) {
+            if (isErasing) {
+                erase(event); // Стирання зображення при русі миші
+            }
+        });
+
+
+        // Функція для стирання зображення на Canvas
+        function erase(event) {
+            const rect = canvas.getBoundingClientRect(); // Позиція canvas на сторінці
+            const x = event.clientX - rect.left; // Позиція миші відносно canvas
+            const y = event.clientY - rect.top;
+
+            // Встановлюємо параметри стирачки
+            ctx.globalCompositeOperation = 'destination-out'; // Змішуємо кольори для стирки
+            ctx.lineWidth = 20;  // Розмір стирачки
+            ctx.lineCap = 'round'; // Кінці ліній стирачки - округлі
+            ctx.strokeStyle = 'rgba(0,0,0,1)'; // Колір стирачки
+
+            // Малюємо лінію в режимі стирачки
+            ctx.beginPath();
+            ctx.moveTo(x, y);
+            ctx.lineTo(x, y);
+            ctx.stroke();
+
+            // Повертаємо звичайний режим змішування
+            ctx.globalCompositeOperation = 'source-over';
+        }
+    </script>
+</body>
+
+</html>
