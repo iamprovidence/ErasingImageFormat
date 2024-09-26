@@ -77,8 +77,7 @@
                     const imageUrl = URL.createObjectURL(file);
                     img.src = imageUrl;
 
-                    img.onload = function () {
-                        console.warn("push")
+                    img.onload = () => {
                         images.push({ img, x: 0, y: 0 }); // Додаємо зображення в масив
                         URL.revokeObjectURL(imageUrl);
 
@@ -118,9 +117,8 @@
         function drawLayers() {
             ctx.clearRect(0, 0, canvas.width, canvas.height); // Очищаємо canvas
 
-            console.warn("DRAW", images, currentLayerIndex)
             images
-                //.filter((_, index) => index <= currentLayerIndex)
+                .filter((_, index) => index <= currentLayerIndex)
                 .forEach(({ img, x, y }) => {
                     ctx.drawImage(img, x, y, canvas.width, canvas.height);
                 });
@@ -203,13 +201,20 @@
             tempCtx.lineTo(x, y);
             tempCtx.stroke();
 
-            //tempCtx.globalCompositeOperation = 'source-over';
+            tempCtx.globalCompositeOperation = 'source-over';
 
             // Оновлюємо зображення поточного шару
-            images[currentLayerIndex].img.src = tempCanvas.toDataURL();
 
-            // Оновлюємо всі шари на основному canvas
-            drawLayers();
+            console.warn("erase", images[currentLayerIndex].img.onload)
+
+            if (!images[currentLayerIndex].img.onload) {
+                images[currentLayerIndex].img.onload = () => {
+                    // Оновлюємо всі шари на основному canvas
+                    drawLayers();
+                    images[currentLayerIndex].img.onload = null;
+                }
+            }
+            images[currentLayerIndex].img.src = tempCanvas.toDataURL();
         }
     </script>
 </body>
